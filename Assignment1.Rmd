@@ -1,0 +1,70 @@
+---
+title: "W1 - Make me an interactive map"
+author: "Peter Thramkrongart"
+output: github_document
+---
+#### Describe a problem or question in your field for which spatial analysis could be applicable.
+
+Creating emergency evacuation plans for large scale terror attacks or hot-spot city catastrophes such as large explosions.
+
+#### List 5 data layers that you think are necessary to answer your question/solve your problem. Find on the internet github.and then describe examples of two or three of your listed layers.
+
+###### five layers could be:
+1:A vector map of roads.  
+
+2:A Vector map of buildings.  
+
+3:An overlay heat map of population density.  
+
+4:Points of suspected terror objectives or vulnerable catastrophe spots.  
+
+5: A Map of building heights.  
+
+A wealth of city maps of roads, buildings, elevations and so on is freely available through Leaflet.  
+
+```{r}
+pacman::p_load(pacman,tidyverse, leaflet,htmlwidgets)#load packages
+places <- read_csv("RCFeature.csv")#read data
+places %>% glimpse()#look at data
+```
+
+```{r}
+#create a funtion for making labels
+labs <- lapply(seq(nrow(places)), function(i) {
+  paste0( "<b>","FeatureID: ", places[i, "FeatureID"],'</b><br/>', 
+          "FeatureType: ", places[i, "FeatureType"], '<br/>', 
+          "Description: ",places[i, "Description"],"<br/>")
+})
+
+
+  #create function for creating a color pallette for coloring markers by the FeatureType
+
+colors <- colorFactor(palette = 'RdYlGn', levels(as.factor(places$FeatureType)))
+
+map <- leaflet() %>% # make leaflet map
+  addTiles() %>%
+  addMiniMap() %>%
+   addMeasure() %>% #add measuring tool
+  #add circle markers
+  addCircleMarkers(
+    data = places,
+    lat = ~ places$Latitude,
+    lng = ~ places$Longitude,
+    color = ~ colors(as.factor(places$FeatureType)),
+    popup = places$Description,
+    label = lapply(labs, htmltools::HTML),#adding labels as HTML
+    clusterOptions = markerClusterOptions(),#cluster close markers
+    opacity = 0.95
+  ) %>% 
+  #add legend for colors
+   addLegend('bottomleft', pal = colors, values = as.factor(places$FeatureType),
+            title = 'Feature Type',
+            opacity = 1)
+#save map
+saveWidget(map, "map.html", selfcontained = TRUE)
+
+```
+
+
+
+
